@@ -1,0 +1,27 @@
+{
+  "name": "sentra",
+  "version": "1.0.0",
+  "description": "Authentication and authorization framework for TypeScript applications",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsup",
+    "test": "vitest"
+  },
+  "keywords": [
+    "authentication",
+    "authorization",
+    "jwt",
+    "typescript",
+    "auth"
+  ],
+  "author": "",
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
+  }
+}
