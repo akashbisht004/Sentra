@@ -2,6 +2,7 @@ import { createAuth } from "../src/index";
 import { CreateUser, UserRecord } from "../src/types/adapter";
 import { describe, it, expect, beforeEach } from "vitest";
 import bcrypt from "bcrypt";
+import { AuthError } from "../src/index";
 
 let db: UserRecord[] = [];
 
@@ -109,19 +110,24 @@ describe("Signup", () => {
     });
 
 
-    it("should reject an existing email", async () => {
+   it("should reject an existing email", async () => {
+    await auth.signUp({
+        email: "akash@gmail.com",
+        password: "333"
+    });
+
+    try {
         await auth.signUp({
             email: "akash@gmail.com",
-            password: "333"
+            password: "another-password"
         });
 
-        await expect(
-            auth.signUp({
-                email: "akash@gmail.com",
-                password: "another-password"
-            })
-        ).rejects.toThrow("User already exists");
-    });
+        expect.fail("Expected signup to throw");
+    } catch (error) {
+        expect(error).toBeInstanceOf(AuthError);
+        expect((error as AuthError).code).toBe("USER_ALREADY_EXISTS");
+    }
+});
 
 
     it("should not create a duplicate user", async () => {

@@ -1,5 +1,4 @@
 
-
 export interface User{
     id: string;
     email: string;
@@ -11,11 +10,6 @@ export interface UserRecord extends User {
 export interface CreateUser{
     email: string;
     passwordHash: string;
-}
-
-export interface SignUpData{
-    email: string;
-    password: string;
 }
 
 export interface UserAdapter {
