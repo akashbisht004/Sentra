@@ -19,9 +19,13 @@
   ],
   "author": "",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.12",
     "typescript": "^5.7.3",
     "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0"
   }
 }
