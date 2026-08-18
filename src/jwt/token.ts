@@ -18,7 +18,14 @@ export async function createToken(userId: string, secret: string, tokenExpiry: s
 export async function verifyToken(token: string, secret: string): Promise<string> {
 
     const key = new TextEncoder().encode(secret);
-    const payload = (await jwtVerify(token, key)).payload;
+    let payload;
+
+    try {
+        payload = (await jwtVerify(token, key)).payload;
+    } catch (error) {
+        throw new AuthError("Invalid token", "AUTHENTICATION_FAILED");
+    }
+
     const sub = payload.sub;
     if (typeof sub !== "string") {
         throw new AuthError("Invalid token", "AUTHENTICATION_FAILED");

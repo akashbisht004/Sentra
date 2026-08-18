@@ -40,7 +40,7 @@ describe("JWT", () => {
 
         await expect(
             verifyToken(token, "wrong-secret")
-        ).rejects.toThrow();
+        ).rejects.toBeInstanceOf(AuthError);
     });
 
 
@@ -59,7 +59,7 @@ describe("JWT", () => {
 
         await expect(
             verifyToken(tamperedToken, secret)
-        ).rejects.toThrow();
+        ).rejects.toBeInstanceOf(AuthError);
     });
 
 
@@ -72,7 +72,7 @@ describe("JWT", () => {
 
         await expect(
             verifyToken(token, secret)
-        ).rejects.toThrow();
+        ).rejects.toBeInstanceOf(AuthError);
     });
 
 
