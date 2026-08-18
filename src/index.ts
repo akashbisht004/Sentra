@@ -5,7 +5,7 @@ import type { AuthErrorCode } from "./errors/auth-error.js";
 
 function createAuth(config: AuthConfig): Auth{
 
-    let auth=new Auth(config.adapter,config.secret);
+    let auth=new Auth(config.adapter,config.secret,config.tokenExpiry ?? "7d");
     return auth;
 }
 

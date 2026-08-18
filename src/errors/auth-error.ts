@@ -1,7 +1,8 @@
 
 export type AuthErrorCode =
     | "USER_ALREADY_EXISTS"
-    | "INVALID_CREDENTIALS";
+    | "INVALID_CREDENTIALS"
+    | "AUTHENTICATION_FAILED";
 
 
 export class AuthError extends Error {

@@ -1,15 +1,18 @@
 import { AuthError } from "../errors/auth-error.js";
+import { createToken } from "../jwt/token.js";
 import type { UserAdapter, User } from "../types/adapter.js";
-import type { LoginData,SignUpData } from "../types/auth.js";
+import type { AuthResult, LoginData,SignUpData } from "../types/auth.js";
 import bcrypt from "bcrypt";
 
 class Auth {
     private adapter: UserAdapter;
     private secret: string;
+    private expiry: string;
 
-    constructor(adapter: UserAdapter, secret: string) {
+    constructor(adapter: UserAdapter, secret: string, expiry: string) {
         this.adapter = adapter;
         this.secret = secret;
+        this.expiry=expiry;
     }
 
     async signUp(data: SignUpData): Promise<User> {
@@ -32,7 +35,7 @@ class Auth {
         };
     }
 
-    async login(data: LoginData): Promise<User>{
+    async login(data: LoginData): Promise<AuthResult>{
         const user=await this.adapter.findUserByEmail(data.email);
         if(user==null) throw new AuthError("Invalid credentials","INVALID_CREDENTIALS");
 
@@ -40,9 +43,12 @@ class Auth {
         
         if(!valid) throw new AuthError("Invalid credentials","INVALID_CREDENTIALS");
 
+        const token=await createToken(user.id, this.secret, this.expiry)
+
         return {
-            id: user.id,
-            email: user.email
+            user: {id: user.id,
+            email: user.email,
+            },token
         };
 
     }

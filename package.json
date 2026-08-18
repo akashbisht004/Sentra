@@ -26,6 +26,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0"
+    "bcrypt": "^6.0.0",
+    "jose": "^6.2.9"
   }
 }

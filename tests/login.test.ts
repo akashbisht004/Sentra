@@ -1,13 +1,14 @@
 import { AuthError, createAuth } from "../src/index";
-import { UserRecord,CreateUser } from "../src/types/adapter";
-import { expect,it,describe } from "vitest";
+import { UserRecord, CreateUser } from "../src/types/adapter";
+import { expect, it, describe } from "vitest";
 import bcrypt from "bcrypt";
+import { verifyToken } from "../src/jwt/token";
 
 const pass = bcrypt.hashSync("akash", 10);
-const pass2= bcrypt.hashSync("rahul",10);
-let db: UserRecord[] = [{ id: "1", email: "akash@gmail.com", passwordHash: pass },{
-    id:"2",
-    email:"rahul@gmail.com",
+const pass2 = bcrypt.hashSync("rahul", 10);
+let db: UserRecord[] = [{ id: "1", email: "akash@gmail.com", passwordHash: pass }, {
+    id: "2",
+    email: "rahul@gmail.com",
     passwordHash: pass2
 }];
 
@@ -41,46 +42,52 @@ const auth = createAuth({
     secret: "hello"
 });
 
-describe("Login",()=>{
-    it("Successful login",async ()=>{
-        let user=await auth.login({email:"akash@gmail.com",password:"akash"});
-        expect(user.email).toBe("akash@gmail.com");
-        expect(user.id).toBeDefined();
+describe("Login", () => {
+    it("Successful login", async () => {
+        let res = await auth.login({ email: "akash@gmail.com", password: "akash" });
+        expect(res.user.email).toBe("akash@gmail.com");
+        expect(res.user.id).toBeDefined();
+        expect(res.token).toBeTypeOf("string");
+        const userId = await verifyToken(res.token, "hello");
+        expect(userId).toBe("1");
     });
 
-    it("Nonexistent user",async ()=>{
-        try{
-            await auth.login({email: "aakash@gmail.com",password: "akash"});
+    it("Nonexistent user", async () => {
+        try {
+            await auth.login({ email: "aakash@gmail.com", password: "akash" });
             expect.fail("expected autherror to throw");
-        }catch(error){
+        } catch (error) {
             expect(error).toBeInstanceOf(AuthError);
             expect((error as AuthError).code).toBe("INVALID_CREDENTIALS");
         }
     });
 
-    it("wrong password",async ()=>{
-        try{
-            await auth.login({email: "akash@gmail.com",password: "wrong-password"});
+    it("wrong password", async () => {
+        try {
+            await auth.login({ email: "akash@gmail.com", password: "wrong-password" });
             expect.fail("expected autherror to throw");
-        }catch(error){
+        } catch (error) {
             expect(error).toBeInstanceOf(AuthError);
             expect((error as AuthError).code).toBe("INVALID_CREDENTIALS");
         }
     });
 
     it("should not expose the password hash to the caller", async () => {
-            const user = await auth.login({
-                email: "akash@gmail.com",
-                password: "akash"
-            });
-    
-            expect(user).not.toHaveProperty("passwordHash");
+        const user = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
         });
 
-    it("Successful login for another user",async ()=>{
-        let user=await auth.login({email:"rahul@gmail.com",password:"rahul"});
-        expect(user.email).toBe("rahul@gmail.com");
-        expect(user.id).toBeDefined();
+        expect(user).not.toHaveProperty("passwordHash");
+    });
+
+    it("Successful login for another user", async () => {
+        let res = await auth.login({ email: "rahul@gmail.com", password: "rahul" });
+        expect(res.user.email).toBe("rahul@gmail.com");
+        expect(res.user.id).toBeDefined();
+        expect(res.token).toBeTypeOf("string");
+        const userId = await verifyToken(res.token, "hello");
+        expect(userId).toBe("2");
     });
 
 })
