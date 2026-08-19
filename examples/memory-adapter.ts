@@ -43,4 +43,10 @@ export class MemoryAdapter implements UserAdapter, RefreshTokenAdapter {
         if (session) session.revokedAt = new Date();
     }
 
+    async revokeFamily(familyId: string): Promise<void> {
+        this.sessions.forEach(session=>{
+            if(session.familyId===familyId) session.revokedAt=new Date();
+        });
+    }
+
 }

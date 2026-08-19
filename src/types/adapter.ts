@@ -22,4 +22,5 @@ export interface RefreshTokenAdapter {
     findSessionByTokenHash(refreshTokenHash: string): Promise<RefreshSession | null>;
     revokeSession(sessionId: string): Promise<void>;
     createSession(session: RefreshSession): Promise<RefreshSession>;
+    revokeFamily(familyId: string): Promise<void>;
 }

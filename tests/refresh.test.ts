@@ -232,4 +232,118 @@ describe("Refresh", () => {
         expect(thirdResult.refreshToken)
             .not.toBe(secondResult.refreshToken);
     });
+
+    it("should preserve the refresh token family during rotation", async () => {
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret"
+        });
+
+        const loginResult = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        const firstSession = adapter.getSessions()[0];
+
+        const refreshResult = await auth.refresh(
+            loginResult.refreshToken
+        );
+
+        const sessions = adapter.getSessions();
+
+        const secondSession =
+            sessions.find(
+                session => session.sessionId !== firstSession.sessionId
+            )!;
+
+        expect(secondSession.familyId)
+            .toBe(firstSession.familyId);
+
+        expect(secondSession.sessionId)
+            .not.toBe(firstSession.sessionId);
+    });
+
+    it("should revoke the entire family when a refresh token is reused", async () => {
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret"
+        });
+
+        const firstLogin = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        const secondResult = await auth.refresh(
+            firstLogin.refreshToken
+        );
+
+        // Reuse the already-revoked token
+        await expect(
+            auth.refresh(firstLogin.refreshToken)
+        ).rejects.toMatchObject({
+            code: "AUTHENTICATION_FAILED"
+        });
+
+        const sessions = adapter.getSessions();
+
+        for (const session of sessions) {
+            expect(session.revokedAt).not.toBeNull();
+        }
+    });
+
+    it("should invalidate the entire token family after reuse", async () => {
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret"
+        });
+
+        const firstLogin = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        const secondResult = await auth.refresh(
+            firstLogin.refreshToken
+        );
+
+        // Attacker reuses old token
+        await expect(
+            auth.refresh(firstLogin.refreshToken)
+        ).rejects.toMatchObject({
+            code: "AUTHENTICATION_FAILED"
+        });
+
+        // Legitimate user's current token is now also invalid
+        await expect(
+            auth.refresh(secondResult.refreshToken)
+        ).rejects.toMatchObject({
+            code: "AUTHENTICATION_FAILED"
+        });
+    });
 });

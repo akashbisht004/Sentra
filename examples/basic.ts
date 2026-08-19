@@ -5,6 +5,7 @@ const adapter = new MemoryAdapter();
 
 const auth = createAuth({
     adapter,
+    refreshTokenAdapter: adapter,
     secret: "my-secret"
 });
 // signup

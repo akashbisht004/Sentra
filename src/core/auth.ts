@@ -54,8 +54,10 @@ class Auth {
         const refreshToken = generateRefreshToken();
         const refreshTokenHash = hashRefreshToken(refreshToken);
         const sessionId = randomBytes(16).toString("hex");
+        const familyId = randomBytes(16).toString("hex");
         const refreshSession: RefreshSession = {
             sessionId,
+            familyId,
             userId: user.id,
             refreshTokenHash,
             expiresAt: durationToDate(this.refreshTokenExpiry),
@@ -96,7 +98,14 @@ class Auth {
             throw new AuthError("Invalid refresh token", "AUTHENTICATION_FAILED");
         }
         if (session.revokedAt !== null) {
-            throw new AuthError("Refresh token has been revoked", "AUTHENTICATION_FAILED");
+            await this.refreshTokenAdapter.revokeFamily(
+                session.familyId
+            );
+
+            throw new AuthError(
+                "Refresh token reuse detected",
+                "AUTHENTICATION_FAILED"
+            );
         }
         if (session.expiresAt.getTime() <= Date.now()) {
             throw new AuthError("Refresh token has been expired", "AUTHENTICATION_FAILED");
@@ -113,6 +122,7 @@ class Auth {
 
         const newSession: RefreshSession = {
             sessionId: newSessionId,
+            familyId: session.familyId,
             userId: user.id,
             refreshTokenHash: newRefreshTokenHash,
             expiresAt: durationToDate(this.refreshTokenExpiry),
