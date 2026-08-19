@@ -9,6 +9,11 @@ export class MemoryAdapter implements UserAdapter, RefreshTokenAdapter {
     getSessions(): RefreshSession[] {
         return this.sessions;
     }
+    deleteUser(userId: string){
+        this.db=this.db.filter((user)=>{
+            return user.id!=userId;
+        })
+    }
 
     async findUserByEmail(email: string): Promise<UserRecord | null> {
         return this.db.find((user) => user.email === email) ?? null;

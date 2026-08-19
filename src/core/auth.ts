@@ -1,5 +1,5 @@
 import { AuthError } from "../errors/auth-error.js";
-import { generateRefreshToken } from "../jwt/refresh-token.js";
+import { generateRefreshToken, hashRefreshToken } from "../jwt/refresh-token.js";
 import { createToken, verifyToken } from "../jwt/token.js";
 import type { UserAdapter, User, RefreshTokenAdapter } from "../types/adapter.js";
 import type { AuthResult, LoginData, SignUpData } from "../types/auth.js";
@@ -52,10 +52,7 @@ class Auth {
         if (!valid) throw new AuthError("Invalid credentials", "INVALID_CREDENTIALS");
 
         const refreshToken = generateRefreshToken();
-        const refreshTokenHash = await bcrypt.hash(
-            refreshToken,
-            12
-        );
+        const refreshTokenHash = hashRefreshToken(refreshToken);
         const sessionId = randomBytes(16).toString("hex");
         const refreshSession: RefreshSession = {
             sessionId,
@@ -87,6 +84,58 @@ class Auth {
         return {
             id: user.id,
             email: user.email
+        };
+    }
+
+    async refresh(refreshToken: string): Promise<AuthResult> {
+
+        const refreshTokenHash = hashRefreshToken(refreshToken);
+        const session = await this.refreshTokenAdapter.findSessionByTokenHash(refreshTokenHash);
+
+        if (session == null) {
+            throw new AuthError("Invalid refresh token", "AUTHENTICATION_FAILED");
+        }
+        if (session.revokedAt !== null) {
+            throw new AuthError("Refresh token has been revoked", "AUTHENTICATION_FAILED");
+        }
+        if (session.expiresAt.getTime() <= Date.now()) {
+            throw new AuthError("Refresh token has been expired", "AUTHENTICATION_FAILED");
+        }
+        const user = await this.adapter.findUserById(session.userId);
+        if (user == null) {
+            throw new AuthError("User no longer exists", "AUTHENTICATION_FAILED");
+        }
+        const newRefreshToken = generateRefreshToken();
+
+        const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
+
+        const newSessionId = randomBytes(16).toString("hex");
+
+        const newSession: RefreshSession = {
+            sessionId: newSessionId,
+            userId: user.id,
+            refreshTokenHash: newRefreshTokenHash,
+            expiresAt: durationToDate(this.refreshTokenExpiry),
+            revokedAt: null
+        };
+
+        await this.refreshTokenAdapter.revokeSession(session.sessionId);
+
+        await this.refreshTokenAdapter.createSession(newSession);
+
+        const token = await createToken(
+            user.id,
+            this.secret,
+            this.expiry
+        );
+
+        return {
+            user: {
+                id: user.id,
+                email: user.email
+            },
+            token,
+            refreshToken: newRefreshToken
         };
     }
 

@@ -3,6 +3,7 @@ import { UserRecord, CreateUser } from "../src/types/adapter.js";
 import { RefreshSession } from "../src/types/session.js";
 import { expect, it, describe } from "vitest";
 import bcrypt from "bcrypt";
+import { hashRefreshToken } from "../src/jwt/refresh-token.js";
 
 const pass = bcrypt.hashSync("akash", 10);
 const pass2 = bcrypt.hashSync("rahul", 10);
@@ -211,12 +212,7 @@ describe("Login", () => {
         const sessions = adapter.getSessions();
         const session = sessions[sessions.length - 1];
 
-        const valid = await bcrypt.compare(
-            result.refreshToken,
-            session.refreshTokenHash
-        );
-
-        expect(valid).toBe(true);
+        expect(session.refreshTokenHash).toBe(hashRefreshToken(result.refreshToken));
     });
 
 
