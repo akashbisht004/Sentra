@@ -20,10 +20,4 @@ export function durationToDate(duration: string): Date {
     return new Date(Date.now() + milliseconds);
 }
 
-console.log(durationToDate("1d"));
-console.log(durationToDate("2h"));
-console.log(durationToDate("1m"));
-console.log(durationToDate("1x"));
-
-
 

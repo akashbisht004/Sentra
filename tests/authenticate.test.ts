@@ -5,13 +5,14 @@ import { createAuth, AuthError } from "../src/index.js";
 import { createToken } from "../src/jwt/token.js";
 
 import type { UserRecord, CreateUser } from "../src/types/adapter.js";
+import type { RefreshSession } from "../src/types/session.js";
 
 const secret = "hello";
 
 const pass = bcrypt.hashSync("akash", 10);
 const pass2 = bcrypt.hashSync("rahul", 10);
 
-let db: UserRecord[] = [
+const db: UserRecord[] = [
     {
         id: "1",
         email: "akash@gmail.com",
@@ -24,38 +25,72 @@ let db: UserRecord[] = [
     }
 ];
 
-
 const adapter = {
+    db: [...db],
+    sessions: [] as RefreshSession[],
 
     findUserByEmail(email: string): Promise<UserRecord | null> {
         return Promise.resolve(
-            db.find(user => user.email === email) ?? null
+            this.db.find(user => user.email === email) ?? null
         );
     },
 
     createUser(data: CreateUser): Promise<UserRecord> {
-
         const user = {
             id: Math.random().toString(),
             ...data
         };
 
-        db.push(user);
+        this.db.push(user);
 
         return Promise.resolve(user);
     },
 
     findUserById(userId: string): Promise<UserRecord | null> {
         return Promise.resolve(
-            db.find(user => user.id === userId) ?? null
+            this.db.find(user => user.id === userId) ?? null
         );
+    },
+
+    findSessionByTokenHash(
+        refreshTokenHash: string
+    ): Promise<RefreshSession | null> {
+        return Promise.resolve(
+            this.sessions.find(
+                session => session.refreshTokenHash === refreshTokenHash
+            ) ?? null
+        );
+    },
+
+    createSession(
+        session: RefreshSession
+    ): Promise<RefreshSession> {
+        this.sessions.push(session);
+        return Promise.resolve(session);
+    },
+
+    revokeSession(sessionId: string): Promise<void> {
+        const session = this.sessions.find(
+            session => session.sessionId === sessionId
+        );
+
+        if (session) {
+            session.revokedAt = new Date();
+        }
+
+        return Promise.resolve();
+    },
+
+    getSessions(): RefreshSession[] {
+        return this.sessions;
     }
 };
 
 
 const auth = createAuth({
     adapter,
-    secret
+    refreshTokenAdapter: adapter,
+    secret: "hello"
 });
 
 
@@ -140,7 +175,7 @@ describe("Authenticate", () => {
             "7d"
         );
 
-        db = db.filter(user => user.id !== "1");
+        adapter.db = adapter.db.filter(user => user.id !== "1");
 
         await expect(
             auth.authenticate(token)
