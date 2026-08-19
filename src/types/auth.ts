@@ -1,9 +1,11 @@
-import { User, UserAdapter } from "./adapter.js";
+import { User, UserAdapter,RefreshTokenAdapter } from "./adapter.js";
 
 export interface AuthConfig{
     adapter: UserAdapter;
+    refreshTokenAdapter: RefreshTokenAdapter;
     secret: string;
     tokenExpiry?: string;
+    refreshTokenExpiry?: string;
 }
 
 export interface SignUpData{
@@ -19,4 +21,5 @@ export interface LoginData{
 export interface AuthResult{
     user: User;
     token: string;
+    refreshToken: string;
 }

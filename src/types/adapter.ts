@@ -1,13 +1,13 @@
+import { RefreshSession } from "./session.js";
 
-export interface User{
+export interface User {
     id: string;
     email: string;
 }
-
 export interface UserRecord extends User {
     passwordHash: string;
 }
-export interface CreateUser{
+export interface CreateUser {
     email: string;
     passwordHash: string;
 }
@@ -18,3 +18,8 @@ export interface UserAdapter {
     findUserById(userId: string): Promise<UserRecord | null>;
 }
 
+export interface RefreshTokenAdapter {
+    findSessionByTokenHash(refreshTokenHash: string): Promise<RefreshSession | null>;
+    revokeSession(sessionId: string): Promise<void>;
+    createSession(session: RefreshSession): Promise<RefreshSession>;
+}
