@@ -1,4 +1,8 @@
 # Sentra v1.0.0
+[![npm version](https://img.shields.io/npm/v/@_bisht_akash/sentra.svg)](https://www.npmjs.com/package/@_bisht_akash/sentra)
+[![CI](https://github.com/akashbisht004/Sentra/actions/workflows/ci.yml/badge.svg)](https://github.com/akashbisht004/Sentra/actions/workflows/ci.yml)
+[![npm downloads](https://img.shields.io/npm/dm/@_bisht_akash/sentra.svg)](https://www.npmjs.com/package/@_bisht_akash/sentra)
+[![License](https://img.shields.io/npm/l/@_bisht_akash/sentra.svg)](https://github.com/akashbisht004/Sentra/blob/main/LICENSE)
 
 Sentra is a lightweight, database-agnostic authentication and authorization mechanics engine for TypeScript and JavaScript applications. Sentra handles secure password hashing, JWT creation and validation, and advanced refresh token rotation (RTR) with automatic reuse detection—allowing you to focus purely on your application's business rules.
 
