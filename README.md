@@ -1,4 +1,4 @@
-# Sentra 
+# Sentra v1.0.0
 
 Sentra is a lightweight, database-agnostic authentication and authorization mechanics engine for TypeScript and JavaScript applications. Sentra handles secure password hashing, JWT creation and validation, and advanced refresh token rotation (RTR) with automatic reuse detection—allowing you to focus purely on your application's business rules.
 
