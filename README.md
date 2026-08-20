@@ -417,3 +417,7 @@ Validates the refresh token, executes rotation, generates a new token/refresh to
 - **Parameters**: `refreshToken: string` - The single-use refresh token.
 - **Returns**: `Promise<AuthResult>` (`{ user: { id, email }, token, refreshToken }`)
 - **Throws**: `AuthError` (code: `AUTHENTICATION_FAILED`)
+
+## Development
+
+Sentra uses GitHub Actions for continuous integration.
