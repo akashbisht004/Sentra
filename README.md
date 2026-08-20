@@ -1,5 +1,5 @@
 # Sentra
-
+Sentra owns authentication mechanics. The application owns business rules.
 ## Architecture Diagram
 
 ```
