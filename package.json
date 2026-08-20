@@ -1,5 +1,5 @@
 {
-  "name": "sentra",
+  "name": "@_bisht_akash/sentra",
   "version": "1.0.0",
   "description": "Authentication and authorization framework for TypeScript applications",
   "type": "module",
@@ -42,5 +42,8 @@
       "import": "./dist/index.js"
     }
   },
-  "license": "ISC"
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  }
 }
