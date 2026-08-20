@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsup",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run test && npm run build"
   },
   "keywords": [
     "authentication",
