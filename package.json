@@ -28,5 +28,17 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "jose": "^6.2.9"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "license": "ISC"
 }
