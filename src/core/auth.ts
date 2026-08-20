@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import type { RefreshSession } from "../types/session.js";
 import { randomBytes } from "node:crypto";
 import { durationToDate } from "../utils/duration.js";
+import { AuthHooks } from "../types/hooks.js";
 
 class Auth {
     private adapter: UserAdapter;
@@ -14,13 +15,15 @@ class Auth {
     private expiry: string;
     private refreshTokenAdapter: RefreshTokenAdapter;
     private refreshTokenExpiry: string;
+    private hooks?: AuthHooks;
 
-    constructor(adapter: UserAdapter, refreshTokenAdapter: RefreshTokenAdapter, secret: string, expiry: string, refreshTokenExpiry: string) {
+    constructor(adapter: UserAdapter, refreshTokenAdapter: RefreshTokenAdapter, secret: string, expiry: string, refreshTokenExpiry: string, hooks?: AuthHooks) {
         this.adapter = adapter;
         this.secret = secret;
         this.expiry = expiry;
         this.refreshTokenAdapter = refreshTokenAdapter;
         this.refreshTokenExpiry = refreshTokenExpiry;
+        this.hooks=hooks;
     }
 
     async signUp(data: SignUpData): Promise<User> {
@@ -47,6 +50,8 @@ class Auth {
         const user = await this.adapter.findUserByEmail(data.email);
         if (user == null) throw new AuthError("Invalid credentials", "INVALID_CREDENTIALS");
 
+        if(this.hooks?.beforeLogin) await this.hooks.beforeLogin({id:user.id, email:user.email});
+
         const valid = await bcrypt.compare(data.password, user.passwordHash);
 
         if (!valid) throw new AuthError("Invalid credentials", "INVALID_CREDENTIALS");
@@ -67,7 +72,7 @@ class Auth {
 
         const token = await createToken(user.id, this.secret, this.expiry)
 
-        return {
+        const result: AuthResult= {
             user: {
                 id: user.id,
                 email: user.email,
@@ -75,6 +80,16 @@ class Auth {
             token,
             refreshToken
         };
+
+        if(this.hooks?.afterLogin){
+            try{
+                 await this.hooks.afterLogin(result.user);
+            }catch(error){
+                console.log("After login hook failed", error);
+            }
+        }
+
+        return result;
 
     }
 

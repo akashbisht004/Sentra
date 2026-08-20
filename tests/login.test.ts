@@ -1,9 +1,10 @@
 import { AuthError, createAuth } from "../src/index.js";
 import { UserRecord, CreateUser } from "../src/types/adapter.js";
 import { RefreshSession } from "../src/types/session.js";
-import { expect, it, describe } from "vitest";
+import { expect, it, describe, vi } from "vitest";
 import bcrypt from "bcrypt";
 import { hashRefreshToken } from "../src/jwt/refresh-token.js";
+import { MemoryAdapter } from "../examples/memory-adapter.js";
 
 const pass = bcrypt.hashSync("akash", 10);
 const pass2 = bcrypt.hashSync("rahul", 10);
@@ -77,9 +78,22 @@ const adapter = {
         return Promise.resolve();
     },
 
+    revokeFamily(familyId: string): Promise<void> {
+        for (const session of this.sessions) {
+            if (session.familyId === familyId) {
+                session.revokedAt = new Date();
+            }
+        }
+
+        return Promise.resolve();
+    },
+
     getSessions(): RefreshSession[] {
         return this.sessions;
     }
+
+
+
 };
 
 
@@ -242,4 +256,163 @@ describe("Login", () => {
             .toBeGreaterThan(Date.now());
     });
 
+    it("should call beforeLogin hook", async () => {
+        const beforeLogin = vi.fn().mockResolvedValue(undefined);
+
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret",
+            hooks: {
+                beforeLogin
+            }
+        });
+
+        await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        expect(beforeLogin).toHaveBeenCalledWith({
+            id: expect.any(String),
+            email: "akash@gmail.com"
+        });
+    });
+
+    it("should stop login when beforeLogin throws", async () => {
+        const beforeLogin = vi
+            .fn()
+            .mockRejectedValue(
+                new AuthError(
+                    "Account is disabled",
+                    "AUTHENTICATION_FAILED"
+                )
+            );
+
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret",
+            hooks: {
+                beforeLogin
+            }
+        });
+
+        await expect(
+            auth.login({
+                email: "akash@gmail.com",
+                password: "akash"
+            })
+        ).rejects.toMatchObject({
+            code: "AUTHENTICATION_FAILED"
+        });
+    });
+
+    it("should call afterLogin hook after successful login", async () => {
+        const afterLogin = vi.fn().mockResolvedValue(undefined);
+
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret",
+            hooks: {
+                afterLogin
+            }
+        });
+
+        const result = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        expect(afterLogin).toHaveBeenCalledOnce();
+
+        expect(afterLogin).toHaveBeenCalledWith(result.user);
+        const hookUser = afterLogin.mock.calls[0][0];
+
+        expect(hookUser).not.toHaveProperty("passwordHash");
+    });
+
+    it("should not call afterLogin when login fails", async () => {
+        const afterLogin = vi.fn().mockResolvedValue(undefined);
+
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret",
+            hooks: {
+                afterLogin
+            }
+        });
+
+        await expect(
+            auth.login({
+                email: "akash@gmail.com",
+                password: "wrong-password"
+            })
+        ).rejects.toMatchObject({
+            code: "INVALID_CREDENTIALS"
+        });
+
+        expect(afterLogin).not.toHaveBeenCalled();
+    });
+
+    it("should still return successful login if afterLogin hook throws", async () => {
+        const afterLogin = vi
+            .fn()
+            .mockRejectedValue(new Error("Analytics service failed"));
+
+        const adapter = new MemoryAdapter();
+
+        await adapter.createUser({
+            email: "akash@gmail.com",
+            passwordHash: await bcrypt.hash("akash", 10)
+        });
+
+        const auth = createAuth({
+            adapter,
+            refreshTokenAdapter: adapter,
+            secret: "my-secret",
+            hooks: {
+                afterLogin
+            }
+        });
+
+        const result = await auth.login({
+            email: "akash@gmail.com",
+            password: "akash"
+        });
+
+        expect(result.user.email).toBe("akash@gmail.com");
+        expect(result.token).toBeTypeOf("string");
+        expect(result.refreshToken).toBeTypeOf("string");
+    });
 });

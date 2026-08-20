@@ -1,4 +1,5 @@
-import { User, UserAdapter,RefreshTokenAdapter } from "./adapter.js";
+import type { User, UserAdapter,RefreshTokenAdapter } from "./adapter.js";
+import type { AuthHooks } from "./hooks.js";
 
 export interface AuthConfig{
     adapter: UserAdapter;
@@ -6,6 +7,7 @@ export interface AuthConfig{
     secret: string;
     tokenExpiry?: string;
     refreshTokenExpiry?: string;
+    hooks?: AuthHooks;
 }
 
 export interface SignUpData{
