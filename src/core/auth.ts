@@ -23,10 +23,15 @@ class Auth {
         this.expiry = expiry;
         this.refreshTokenAdapter = refreshTokenAdapter;
         this.refreshTokenExpiry = refreshTokenExpiry;
-        this.hooks=hooks;
+        this.hooks = hooks;
     }
 
     async signUp(data: SignUpData): Promise<User> {
+
+        if (this.hooks?.beforeSignUp) {
+            await this.hooks.beforeSignUp({ email: data.email });
+        }
+
         const user = await this.adapter.findUserByEmail(data.email);
 
         if (user != null) {
@@ -40,17 +45,28 @@ class Auth {
             passwordHash
         });
 
-        return {
+        const result: User = {
             id: newUser.id,
             email: newUser.email
         };
+
+        if (this.hooks?.afterSignUp) {
+            try {
+                await this.hooks.afterSignUp(result);
+            } catch (error) {
+                console.error("after signup hook failed", error);
+            }
+        }
+
+        return result;
+
     }
 
     async login(data: LoginData): Promise<AuthResult> {
         const user = await this.adapter.findUserByEmail(data.email);
         if (user == null) throw new AuthError("Invalid credentials", "INVALID_CREDENTIALS");
 
-        if(this.hooks?.beforeLogin) await this.hooks.beforeLogin({id:user.id, email:user.email});
+        if (this.hooks?.beforeLogin) await this.hooks.beforeLogin({ id: user.id, email: user.email });
 
         const valid = await bcrypt.compare(data.password, user.passwordHash);
 
@@ -72,7 +88,7 @@ class Auth {
 
         const token = await createToken(user.id, this.secret, this.expiry)
 
-        const result: AuthResult= {
+        const result: AuthResult = {
             user: {
                 id: user.id,
                 email: user.email,
@@ -81,11 +97,11 @@ class Auth {
             refreshToken
         };
 
-        if(this.hooks?.afterLogin){
-            try{
-                 await this.hooks.afterLogin(result.user);
-            }catch(error){
-                console.log("After login hook failed", error);
+        if (this.hooks?.afterLogin) {
+            try {
+                await this.hooks.afterLogin(result.user);
+            } catch (error) {
+                console.error("After login hook failed", error);
             }
         }
 

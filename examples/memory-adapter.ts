@@ -9,10 +9,13 @@ export class MemoryAdapter implements UserAdapter, RefreshTokenAdapter {
     getSessions(): RefreshSession[] {
         return this.sessions;
     }
-    deleteUser(userId: string){
-        this.db=this.db.filter((user)=>{
-            return user.id!=userId;
+    deleteUser(userId: string) {
+        this.db = this.db.filter((user) => {
+            return user.id != userId;
         })
+    }
+    getUsers(): UserRecord[] {
+        return this.db;
     }
 
     async findUserByEmail(email: string): Promise<UserRecord | null> {
@@ -44,8 +47,8 @@ export class MemoryAdapter implements UserAdapter, RefreshTokenAdapter {
     }
 
     async revokeFamily(familyId: string): Promise<void> {
-        this.sessions.forEach(session=>{
-            if(session.familyId===familyId) session.revokedAt=new Date();
+        this.sessions.forEach(session => {
+            if (session.familyId === familyId) session.revokedAt = new Date();
         });
     }
 

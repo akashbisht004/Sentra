@@ -1,5 +1,4 @@
 import type { User } from "./adapter.js";
-import { AuthResult } from "./auth.js";
 
 export interface AuthHooks {
     beforeLogin?: (
@@ -9,4 +8,17 @@ export interface AuthHooks {
     afterLogin?: (
         user: User
     ) => Promise<void>;
+
+    beforeSignUp?: (
+        data: SignUpHookData
+    ) => Promise<void>;
+
+    afterSignUp?: (
+        user:User
+    ) => Promise<void>;
+
+}
+
+export interface SignUpHookData {
+    email: string;
 }
